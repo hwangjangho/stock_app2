@@ -1,5 +1,8 @@
 import streamlit as st
 
+openai_key = st.secrets["OPENAI_API_KEY"]
+dart_key = st.secrets["DART_API_KEY"]
+
 st.set_page_config(page_title="주가 예측 프로그램", layout="wide")
 
 pages = [
