@@ -8,9 +8,43 @@ def get_dart_key():
 
 def api_get(path, params):
     url = f"{DART_BASE}/{path}"
-    r = requests.get(url, params=params, timeout=30)
-    r.raise_for_status()
-    return r
+   import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+BASE_URL = "https://opendart.fss.or.kr/api/"
+
+session = requests.Session()
+
+retries = Retry(
+    total=3,
+    connect=3,
+    read=3,
+    backoff_factor=1.5,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["GET"],
+)
+
+adapter = HTTPAdapter(max_retries=retries)
+session.mount("https://", adapter)
+session.mount("http://", adapter)
+
+def api_get(path, params):
+    url = BASE_URL + path
+    try:
+        r = session.get(
+            url,
+            params=params,
+            timeout=(10, 60),  # connect timeout, read timeout
+        )
+        r.raise_for_status()
+        return r
+    except requests.exceptions.ConnectTimeout as e:
+        raise RuntimeError(f"DART 연결 시간이 초과되었습니다: {url}") from e
+    except requests.exceptions.ReadTimeout as e:
+        raise RuntimeError(f"DART 응답이 너무 오래 걸립니다: {url}") from e
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f"DART 요청 실패: {e}") from e
 
 def api_get_json(path, params):
     return api_get(path, params).json()
